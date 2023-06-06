@@ -19,7 +19,7 @@ vector<int, vector<int>> SymbolsTable;
 vector<int, int> DefinitionsTable;
 vector<int, int> UseTable;
 
-class FileTables
+
 
 void SymbolsTableProcedure()
 {
