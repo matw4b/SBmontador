@@ -5,14 +5,14 @@
 #include <string>
 #include <vector>
 
-#include "../include/preprocessor.h"
+#include "../include/assembler.h"
 
 using namespace std;
 
 string toupper(string input){
 	
 	int i;
-	for(i = 0; i < input.length(); i++){
+	for(i = 0; i < (int)input.length(); i++){
 		input[i] = toupper(input[i]);
 	}
 
@@ -22,11 +22,14 @@ string toupper(string input){
 int main(int argc, char *argv[ ]){
 	
 	int i;
-	
-	// Faz pre processamento dos arquivos
+	string input_file_name;
+
+	// Faz montagem dos arquivos
 	for(i = 1; i < argc; i++)
 	{
-		PreProcessor(argv[i], i);   // Passa arquivo e seu numero identificador
+		input_file_name = argv[i];
+		input_file_name.append(".asm");
+		Assembler(input_file_name, i);   // Passa arquivo e seu numero identificador
 	}
 	
 
