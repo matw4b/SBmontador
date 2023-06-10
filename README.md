@@ -2,7 +2,7 @@
 Trabalho 1 da disciplina de Software Básico: realizar um montador de passagem única e um ligador que funcione para até 4 arquivos. O fluxograma abaixo é do montador de uma passagem.
 ![Fluxograma do montador](/images/fluxograma.png)
 
-Alunos:
+## Alunos:
 
 Matheus Guaraci Lima Bouças Alves 180046951
 
