@@ -21,7 +21,11 @@ vector < pair<string, vector<int> > > SymbolsTable;
 vector < pair<string, int> > DefinitionsTable;
 vector < pair<string, int> > UseTable;
 vector < pair<string, int> > relativos;
+vector < pair<string, int> > out_relativos;
+
 vector<vector<string> > decomposed_instructions_list;
+vector < pair <int, string > > ende_instrucoes_com_adicao;
+
 
 void StartTables(){
 
@@ -110,10 +114,43 @@ string CleanSpaces(string input){
 	return final;
 }
 
+vector<string> OperationDecomposer(string input)
+{
+	string delimiter = " ", aux;
+	int start = 0;
+	int end = input.find(delimiter);
+	vector<string> return_vector;
+
+	if(input.find(",") != std::string::npos)
+	{
+		replace(input.begin(), input.end(), ',', ' ');
+		input = CleanSpaces(input);
+		input.append(" ");
+	}
+
+
+	while (end != -1) {
+        
+		aux = input.substr(start, end - start);
+
+		if(aux != " ")
+		{
+			return_vector.push_back(aux);
+		}
+		
+		start = end + delimiter.size();
+        end = input.find(delimiter, start);
+    }
+
+	return return_vector;
+
+}
+
 void PreProcessor(string source_code_file_name, int file_number){
 
 	string line, isolated_label, new_file_name;
 	bool isolated_label_flag = false;
+	bool has_module = false;
 	ifstream source_code;
 	ofstream processed_code;
 
@@ -149,7 +186,14 @@ void PreProcessor(string source_code_file_name, int file_number){
 			{
 				continue;
 			}
-
+			if(line.find("BEGIN") != std::string::npos )
+			{
+				has_module = true;
+			}
+			if(has_module && line.find("END") != std::string::npos )
+			{
+				continue;
+			}
 			// Verifica se somente a label está presente na linha
 			if(line[line.length()-1] == ':')
 			{
@@ -187,6 +231,10 @@ void PreProcessor(string source_code_file_name, int file_number){
 		for(int i = 0; i < (int)section_data.size(); i++)		// Adiciona dados do section data no final do arquivo
 		{
 			processed_code << section_data[i] << endl;
+		}
+		if(has_module)
+		{
+			processed_code << "END " << endl;
 		}
 		
 		source_code.close();
@@ -231,51 +279,7 @@ int check_if_in_symbols_table(string(input))
 }
 
 // Pega uma string e divide em substrings separadas pelo espaço (do input)
-vector<string> OperationDecomposer(string input)
-{
-	string delimiter = " ", aux;
-	int start = 0;
-	int end = input.find(delimiter);
-	vector<string> return_vector;
 
-	if(input.find(",") != std::string::npos)
-	{
-		replace(input.begin(), input.end(), ',', ' ');
-		input = CleanSpaces(input);
-		input.append(" ");
-		// cout << input << endl;		
-	}
-
-
-	while (end != -1) {
-        
-		aux = input.substr(start, end - start);
-
-		if(aux != " ")
-		{
-			return_vector.push_back(aux);
-		}
-		
-		start = end + delimiter.size();
-        end = input.find(delimiter, start);
-    }
-
-	// if(input.find("COPY") != std::string::npos){
-
-	// 	cout << input << endl;
-	// 	for (int i = 0; i < (int)return_vector.size(); i++)
-	// 	{
-	// 		cout << return_vector[i] << " ";
-	// 	}
-	// 	cout << endl;
-	// }
-	
-
-	// Nao coloca "," no caso: COPY A , B. Então o vector de retorno tem tamanho 3
-
-	return return_vector;
-
-}
 
 void substitute_in_decomposed_code(int input, string label)
 {
@@ -290,15 +294,10 @@ void substitute_in_decomposed_code(int input, string label)
 	{		
 		if(decomposed_instructions_list[input][i].find("+") != std::string::npos)
 		{
-			// cout << "INSTRUCAO COM +:" << endl;
-			// for (int j = 0; j < (int)decomposed_instructions_list[input].size(); j++)
-			// {
-			// 	cout << decomposed_instructions_list[input][j] << " ";
-			// }
-			// cout << endl;
+			ende_instrucoes_com_adicao.push_back(make_pair(input, decomposed_instructions_list[input][i+1]));	// Indica que a instrucao na linha "input" usa adicao
+
 			if(decomposed_instructions_list[input][i+1].length() >= 2){
 
-					cout << "YOOOOOOOOOOOOOOOOO " << decomposed_instructions_list[input][i+1][1] << endl;
 				if(decomposed_instructions_list[input][i+1][0] == '0' && decomposed_instructions_list[input][i+1][1] == 'X')
 				{
 
@@ -307,7 +306,6 @@ void substitute_in_decomposed_code(int input, string label)
 					ss >> adicional_value;
 
 					adicional_value = adicional_value;
-					std::cout << "CONVERTIDO: " << adicional_value << std::endl;
 				}
 				else
 				{
@@ -323,14 +321,6 @@ void substitute_in_decomposed_code(int input, string label)
 
 			decomposed_instructions_list[input].erase(decomposed_instructions_list[input].end() - 1);
 			decomposed_instructions_list[input].erase(decomposed_instructions_list[input].end() - 1);
-
-			// cout << "DEPOIS DO AJUSTE:" << endl;
-			// for (int j = 0; j < (int)decomposed_instructions_list[input].size(); j++)
-			// {
-			// 	cout << decomposed_instructions_list[input][j] << " ";
-			// }
-
-			// decomposed_instructions_list[input][j].resize(decomposed_instructions_list[input][j].size()	 - 2);		// Remove dois ultimos membros do vector ('+' e o 'numero a ser adicionado')
 
 			break;
 		}
@@ -399,7 +389,7 @@ void Assembler(string source_code_file_name, int file_number){
 	if(preprocessed_file.is_open())
 	{
 		line_counter = 0;
-		while (!preprocessed_file.eof())
+		while (!preprocessed_file.eof())		// Loop que otera sbre todas as linhas do arquivo asm
 		{
 
 			getline(preprocessed_file, line);
@@ -424,12 +414,6 @@ void Assembler(string source_code_file_name, int file_number){
 			{
 				continue;
 			}
-
-			// cout << "linha analisada: " << line << endl;
-			// if(line.find_last_of(":") != line.find(":"))
-			// {
-			// 	cout << "ERRO: MAIS DE UMA LABEL NA MESMA LINHA" << endl;		// NAO ESTA FUNCIONANDO, ARRUMAR DETECCAO DESSE ERRO
-			// }
 
 			// Bota na tabela de relativos se achar label nova que não seja extern
 			if(line.find(":") != std::string::npos)
@@ -499,11 +483,6 @@ void Assembler(string source_code_file_name, int file_number){
 					}
 				}
 
-				// if(check_if_declared_in_relativos(aux.substr(0, aux.find(":")))){
-				// 	// cout << "lol " << aux.substr(0, aux.find(":")) << endl;
-				// 	// relativos.push_back( make_pair(line.substr(0, lastpos), line_counter) );	// Adiciona label a lista de relativos
-				// }
-
 				aux = CleanSpaces(line.substr(lastpos+1, line.length()));
 				aux.append(" ");
 
@@ -558,44 +537,29 @@ void Assembler(string source_code_file_name, int file_number){
 			else if(Diretivas.count(decomposed_instruction[0]))
 			{
 
-				if(decomposed_instruction[0] == "CONST")
+				if(decomposed_instruction[0].find("CONST") != std::string::npos)
 				{
 					aux.append(decomposed_instruction[1]);
 					aux.append(" ");
 				}
-				else if(decomposed_instruction[0] == "SPACE")
+				else if(decomposed_instruction[0].find("SPACE") != std::string::npos)
 				{
-					// cout << line << " 00" << endl;
-					aux.append("00 ");					
+						aux.append("00 ");
 				}
 
 			}
 
-
-				// cout << "ZE DA MANGA: " << aux << endl;
-
 				if(add_line_to_final){
 					
-					// if(Diretivas.count(decomposed_instruction[0]))
-					// {
-						// section_data.push_back(aux);
-					// }
-					// else
-					// {
-					// }
 					first_translation_pass.push_back(aux);		// Finalmente adiciona instrucao traduzida em first_translation_pass
 					decomposed_instructions_list.push_back(OperationDecomposer(aux));			
 					line_counter++;
 
 				}
-				
-				
+
+
 				add_line_to_final = true;
 				
-				
-
-				
-
 			//  ESTOU GUARDANDO DECLARACOES DE LABELS EM "relativos". SymbolsTable VAI SERVIR PARA ARMAZENAR LISTA DE REFERENCIAS NAO RESOLVIDAS
 
 		}
@@ -611,24 +575,6 @@ void Assembler(string source_code_file_name, int file_number){
 		{
 			cout << "ERRO SEMÂNTICO DETECTADO: NÃO FOI DEFINIDO UM SECTION DATA NO ARQUIVO DE ENTRADA" << endl;
 		}
-
-
-		// Verifica se foram usados caracteres especiais no nome de alguma label
-
-		cout << "lol" << endl;
-		for(i = 0; i < (int)decomposed_instructions_list.size(); i++)
-		{
-
-			for(j = 0; j < (int)decomposed_instructions_list[i].size(); j++)
-			{
-				cout << decomposed_instructions_list[i][j] << " ";
-			}
-			cout << endl;
-
-		}
-
-
-
 
 		// RESOLVE REFERENCIAS PENDENTES
 		
@@ -677,7 +623,166 @@ void Assembler(string source_code_file_name, int file_number){
 			if(decomposed_instructions_list[i][j][0] < '0' || decomposed_instructions_list[i][j][0] > '9')
 				cout << "ERRO: A LABEL '" << decomposed_instructions_list[i][j] << "' NAO FOI DECLARADA EM SECTION DATA" << endl;
 		}
-		cout << endl;
+	}
+
+	// USADO PARA CONVERTER STRING PARA INT
+	int opcode_value;
+
+	vector<pair<string,string> > line_address_counter;	// Contem (address da linha), (address real) no pair
+	int address_counter = 0;
+
+	// CORRIGE ENDEREÇOS DE LABELS NAS ESTRUTURAS DE DADOS UTILIZADAS
+	for (i = 0; i < (int)decomposed_instructions_list.size(); i++)
+	{
+
+		stringstream stoi(decomposed_instructions_list[i][0]);
+		stoi >> opcode_value;
+			
+		ostringstream str1, str2;
+		str1 << i;
+		str2 << address_counter;
+
+		if((int)decomposed_instructions_list[i].size() == 1)		// Diretivas tem tamanho 1, entao esse if trata delas
+		{
+			line_address_counter.push_back(make_pair(str1.str(), str2.str()));
+
+			address_counter++;
+		}
+
+		else if(opcode_value == 9)	// trata o copy (opcode 3)
+		{
+			line_address_counter.push_back(make_pair(str1.str(), str2.str()));
+
+			address_counter+=3;
+		}
+		else if( opcode_value == 14 )	// trata o stop (opcode 14)
+		{
+			line_address_counter.push_back(make_pair(str1.str(), str2.str()));
+
+			address_counter++;
+		}
+		else if( opcode_value >= 1 && opcode_value <= 13 )	// trata o resto dos opcodes
+		{
+			line_address_counter.push_back(make_pair(str1.str(), str2.str()));
+
+			address_counter += 2;
+		}
+
+	}
+
+	// Corrige diferencas encontradas
+	for (i = 0; i < (int)decomposed_instructions_list.size(); i++)
+	{
+		for(j = 1; j < (int)decomposed_instructions_list[i].size(); j++)
+		{
+			if(decomposed_instructions_list[i][j].find("+") != std::string::npos)	// Nao substitui apos o "+", pula para a proxima linha de codigo
+			{
+				break;
+			}
+
+			for(int k = 0; k < (int)line_address_counter.size(); k++)
+			{
+				if(decomposed_instructions_list[i][j].find((line_address_counter[k].first)) != std::string::npos )	// Se encontra algum em formato linha, corrige para o formato endereço
+				{
+					decomposed_instructions_list[i][j] = line_address_counter[k].second;	// Substitui pelo endereco real
+					break;
+				}
+			}
+
+		}
+
+	}
+
+	// Corrige enderecos nas linhas que possuem adicao
+	int addition_value;
+	int current_value;
+	for(i = 0; i < (int)ende_instrucoes_com_adicao.size(); i++)
+	{
+
+		int tam = decomposed_instructions_list[ende_instrucoes_com_adicao[i].first].size();
+		
+
+		stringstream addval(ende_instrucoes_com_adicao[i].second);
+		addval >> addition_value;
+
+		stringstream currval(decomposed_instructions_list[i][1]);
+		currval >> current_value;
+
+		current_value += addition_value;
+
+		ostringstream str1;
+		str1 << current_value;
+
+		decomposed_instructions_list[ende_instrucoes_com_adicao[i].first][tam-1] = str1.str();
+
+	}
+	
+	// Corrige endereços na tabela de uso
+	for ( i = 0; i < (int)UseTable.size(); i++)
+	{
+		for ( j = 0; j < (int)line_address_counter.size(); j++)
+		{
+			int use_pos;
+			stringstream newval(line_address_counter[j].first);
+			newval >> use_pos;
+
+			if(use_pos == UseTable[i].second)
+			{
+				int corrected_address;
+				stringstream corradd(line_address_counter[j].second);
+				corradd >> corrected_address;
+
+				UseTable[i].second = corrected_address + 1;
+				break;
+			}
+
+		}
+		
+	}
+
+	// Corrige endereços na tabela de definicoes
+	for ( i = 0; i < (int)DefinitionsTable.size(); i++)
+	{
+		for ( j = 0; j < (int)line_address_counter.size(); j++)
+		{
+			int use_pos;
+			stringstream newval(line_address_counter[j].first);
+			newval >> use_pos;
+
+			if(use_pos == DefinitionsTable[i].second)
+			{
+				int corrected_address;
+				stringstream corradd(line_address_counter[j].second);
+				corradd >> corrected_address;
+
+				DefinitionsTable[i].second = corrected_address;
+				break;
+			}
+
+		}
+		
+	}
+
+	// define tabela de relativos
+
+	for ( i = 0; i < (int)decomposed_instructions_list.size(); i++)
+	{
+		for ( j = 1; j < (int)decomposed_instructions_list[i].size(); j++)
+		{
+			if(decomposed_instructions_list[i][j].find("+") == std::string::npos)
+			{
+
+				int corrected_address;
+				stringstream corradd(line_address_counter[i].second);
+				corradd >> corrected_address;
+
+				out_relativos.push_back(make_pair(decomposed_instructions_list[i][j], corrected_address+1));
+			}
+			else
+			{
+				break;
+			}
+		}
 	}
 
 	// Cria arquivo de saida
@@ -709,9 +814,9 @@ void Assembler(string source_code_file_name, int file_number){
 			}
 
 			output_file << "RELATIVOS\n";
-			for (i = 0; i < (int)relativos.size(); i++)
+			for (i = 0; i < (int)out_relativos.size(); i++)
 			{
-				output_file << relativos[i].second << " ";
+				output_file << out_relativos[i].second << " ";
 			}
 			output_file << "\n";
 
@@ -737,63 +842,10 @@ void Assembler(string source_code_file_name, int file_number){
 				
 			}
 			
-
 		}
-
-
-
-			
-
 			output_file.close();
 
 	}
-
-
-
-	// LOOPS USADOS PARA DEBUGGING
-
-	for(i = 0; i < (int)first_translation_pass.size(); i++)
-	{
-		cout << first_translation_pass[i] << endl;
-	}
-	cout << endl;
-
-	for(i = 0; i < (int)decomposed_instructions_list.size(); i++)
-	{
-		for(int j = 0; j < (int)decomposed_instructions_list[i].size(); j++)
-		{
-			cout << decomposed_instructions_list[i][j] << " ";
-		}
-		cout << endl;
-	}
-	cout << endl;
-
-	cout << "DefinitionsTable: " << endl;
-	for(i = 0; i < (int)DefinitionsTable.size(); i++){
-		cout << DefinitionsTable[i].first << " " << DefinitionsTable[i].second << endl;
-	}
-	cout << endl;
-
-	cout << "relativos: " << endl;
-	for(i = 0; i < (int)relativos.size(); i++){
-		cout << relativos[i].first << " " << relativos[i].second << endl;
-	}
-	cout << endl;
-
-	cout << "UseTable: " << endl;
-	for(i = 0; i < (int)UseTable.size(); i++){
-		cout << UseTable[i].first << " " << UseTable[i].second << endl;
-	}
-	cout << endl;
-
-	cout << "ExternLabels: " << endl;
-	for(i = 0; i < (int)extern_labels.size(); i++){
-		cout << extern_labels[i] << endl;
-	}
-	cout << endl;
-
-	cout << "TAMANHO DA decomposed_instructions_list: ";
-	cout << decomposed_instructions_list.size() << endl;
 
 }
 
