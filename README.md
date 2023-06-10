@@ -3,7 +3,9 @@ Trabalho 1 da disciplina de Software Básico
 ![Fluxograma do montador](/images/fluxograma.png)
 
 Alunos:
+
 Matheus Guaraci Lima Bouças Alves 180046951
+
 Luca Delpino Barbabella 180125559
 
 # Como compilar e executar o compilador e o montador
