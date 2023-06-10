@@ -19,4 +19,4 @@ para executar:
 
 ## ./linker <arquivo> <arquivo> <arquivo> <arquivo>
  
-Os arquivos devem estar ordenados para que o ligador possa ligar corretamente.
+Os arquivos devem estar ordenados para que o ligador possa funcionar corretamente.
