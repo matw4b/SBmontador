@@ -28,4 +28,4 @@ para executar:
 Os arquivos devem estar ordenados para que o ligador possa funcionar corretamente.
  
 # Sistema operacional utilizado:
-linux mint para o ligador
+linux mint 21 vanessa e ubuntu 22.04 lts
