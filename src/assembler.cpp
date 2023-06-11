@@ -403,6 +403,7 @@ void Assembler(string source_code_file_name, int file_number){
 			else if(line.find("SECTION TEXT") != std::string::npos )
 			{
 				section_text_existence = true;
+				continue;
 			}
 
 			else if(line.find("SECTION DATA") != std::string::npos )
@@ -544,6 +545,8 @@ void Assembler(string source_code_file_name, int file_number){
 				}
 				else if(decomposed_instruction[0].find("SPACE") != std::string::npos)
 				{
+						// TALVEZ AQUI
+
 						aux.append("00 ");
 				}
 
@@ -826,7 +829,9 @@ void Assembler(string source_code_file_name, int file_number){
 				for (j = 0; j < (int)decomposed_instructions_list[i].size(); j++)
 				{
 					output_file << decomposed_instructions_list[i][j] << " ";
+					// cout << decomposed_instructions_list[i][j] << " ";
 				}
+				// cout << endl;
 				
 			}
 
