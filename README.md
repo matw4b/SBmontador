@@ -31,3 +31,4 @@ Os arquivos devem estar ordenados para que o ligador possa funcionar corretament
 linux mint 21 vanessa e ubuntu 22.04 lts
 
 Observacao: o montador está duplicando as informaçoes da section data que possuem space e const.
+Observacao2: foi utilizado MUL.
